@@ -1,0 +1,51 @@
+version: '3.8'
+services:
+  mysql:  # Изменено на mysql
+    image: mysql
+    environment:
+      MYSQL_DATABASE: english
+#      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+    ports:
+      - "3307:3306"
+    networks:
+      - ntw
+
+
+  app:
+    image: english
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8092"
+#      - server.port=8092
+#    depends_on:
+#      - mysql  # Оставлено как mysql
+    depends_on:
+        mysql:
+            condition: service_healthy
+              # Запуск приложения только после того, как MySQL станет "здоровым"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s       # Интервал между проверками
+      timeout: 5s         # Время ожидания ответа
+      retries: 5          # Количество попыток до признания сервиса "нездоровым"
+      start_period: 30s
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/english?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC  # Осталось как mysql
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    networks:
+      - ntw
+
+networks:
+  ntw:
+    driver: bridge
+
+
+
+
+
